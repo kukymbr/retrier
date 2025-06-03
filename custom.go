@@ -24,14 +24,14 @@ func LimitAttemptsCount(attempts int) AllowNextAttemptFunc {
 
 // FixedDelay returns a CalcDelayFunc with a fixed delay value.
 func FixedDelay(delay time.Duration) CalcDelayFunc {
-	return func(attemptN int, lastDelay time.Duration) time.Duration {
+	return func(_ int, _ time.Duration) time.Duration {
 		return delay
 	}
 }
 
 // ProgressiveDelay returns a CalcDelayFunc with a progressively increasing delay.
 func ProgressiveDelay(initialDelay time.Duration, multiplier float64) CalcDelayFunc {
-	return func(attemptN int, lastDelay time.Duration) time.Duration {
+	return func(attemptN int, _ time.Duration) time.Duration {
 		return initialDelay * time.Duration(float64(attemptN)*multiplier)
 	}
 }

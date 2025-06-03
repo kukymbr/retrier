@@ -43,7 +43,7 @@ func TestRequest(t *testing.T) {
 			},
 			Fn: failingFn,
 			Assert: func(t *testing.T, took time.Duration, err error) {
-				greaterOrEqual(t, took, 30*time.Millisecond)
+				greaterOrEqual(t, took, 20*time.Millisecond)
 				errorIs(t, err, errTest)
 			},
 		},
@@ -65,7 +65,7 @@ func TestRequest(t *testing.T) {
 			},
 			Fn: failingFn,
 			Assert: func(t *testing.T, took time.Duration, err error) {
-				greaterOrEqual(t, took, 35*time.Millisecond)
+				greaterOrEqual(t, took, 15*time.Millisecond)
 				errorIs(t, err, errTest)
 			},
 		},

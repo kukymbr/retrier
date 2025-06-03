@@ -12,7 +12,7 @@ func doWithRetries(fn Fn, delayFn CalcDelayFunc, allowNextFn AllowNextAttemptFun
 	)
 
 	start := time.Now()
-	attemptN := -1
+	attemptN := 0
 
 	for {
 		attemptN++
