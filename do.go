@@ -44,6 +44,6 @@ func doWithRetries(fn Fn, delayFn CalcDelayFunc, allowNextFn AllowNextAttemptFun
 
 	return fmt.Errorf(
 		"failed after %d attempts (elapsed %s): %w",
-		attemptN+1, time.Since(start).String(), lastErr,
+		attemptN, time.Since(start).String(), lastErr,
 	)
 }
