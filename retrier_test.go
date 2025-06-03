@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"retrier"
+	"github.com/kukymbr/retrier"
 )
 
 func TestRequest(t *testing.T) {

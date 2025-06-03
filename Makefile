@@ -6,6 +6,7 @@ all:
 	$(MAKE) validate
 
 prepare:
+	go mod tidy
 	go install ./...
 	go fmt ./...
 
