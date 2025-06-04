@@ -24,7 +24,7 @@ Linear retrier attempts to execute function with a fixed delay.
 
 ```go
 rt := retrier.NewLinear(5, 10*time.Second)
-err := rt.Do(someNiceButUnstableFunc())
+err := rt.Do(context.Background(), someNiceButUnstableFunc())
 ```
 
 ### Progressive retrier
@@ -33,7 +33,7 @@ Linear retrier attempts to execute a function with a progressively increasing de
 
 ```go
 rt := retrier.NewProgressive(5, 10*time.Second, 1.5)
-err := rt.Do(someNiceButUnstableFunc())
+err := rt.Do(context.Background(), someNiceButUnstableFunc())
 ```
 
 ### No-op retrier
@@ -42,7 +42,7 @@ Noop retrier allow to disable retrying policy using the same `Retrier` interface
 
 ```go
 rt := retrier.NewNoop()
-err := rt.Do(someFuncToRunWithoutRetries())
+err := rt.Do(context.Background(), someFuncToRunWithoutRetries())
 ```
 
 ### Custom retrier
@@ -58,7 +58,7 @@ rt := retrier.New(
 	    return lastDelay > time.Minute
     }
 )
-err := rt.Do(someNiceButUnstableFunc())
+err := rt.Do(context.Background(), someNiceButUnstableFunc())
 ```
 
 #### Predefined sugars
@@ -71,7 +71,7 @@ rt := retrier.New(
     retrier.WithJitter(retrier.WithMaxDelay(retrier.ProgressiveDelay(10*time.Second, 1.5), 10*time.Minute)),
     retrier.LimitAttemptsCount(100),
 )
-err := rt.Do(someNiceButUnstableFunc())
+err := rt.Do(context.Background(), someNiceButUnstableFunc())
 ```
 
 ##### Predefined `CalcDelayFunc` functions
