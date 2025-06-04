@@ -1,11 +1,12 @@
 package retrier
 
 import (
+	"context"
 	"fmt"
 	"time"
 )
 
-func doWithRetries(fn Fn, delayFn CalcDelayFunc, allowNextFn AllowNextAttemptFunc) error {
+func doWithRetries(ctx context.Context, fn Fn, delayFn CalcDelayFunc, allowNextFn AllowNextAttemptFunc) error {
 	var (
 		lastErr   error
 		lastDelay time.Duration
@@ -15,6 +16,10 @@ func doWithRetries(fn Fn, delayFn CalcDelayFunc, allowNextFn AllowNextAttemptFun
 	attemptN := 0
 
 	for {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+
 		attemptN++
 
 		err := fn()

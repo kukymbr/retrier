@@ -1,13 +1,14 @@
 package retrier_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/kukymbr/retrier"
 )
 
-func TestRequest(t *testing.T) {
+func TestRetrier_Do(t *testing.T) {
 	tests := []struct {
 		Name       string
 		GetRetrier func() retrier.Retrier
@@ -108,6 +109,60 @@ func TestRequest(t *testing.T) {
 			took := time.Since(start)
 
 			test.Assert(t, took, err)
+		})
+	}
+}
+
+func TestRetrier_DoContext(t *testing.T) {
+	tests := []struct {
+		Name       string
+		GetContext func() context.Context
+		Fn         func() error
+		Assert     func(t *testing.T, err error)
+	}{
+		{
+			Name: "with context and error",
+			GetContext: func() context.Context {
+				return context.Background()
+			},
+			Fn: failingFn,
+			Assert: func(t *testing.T, err error) {
+				errorIs(t, err, errTest)
+			},
+		},
+		{
+			Name: "with context without error",
+			GetContext: func() context.Context {
+				return context.Background()
+			},
+			Fn: successFn,
+			Assert: func(t *testing.T, err error) {
+				noError(t, err)
+			},
+		},
+		{
+			Name: "with cancelled context with error",
+			GetContext: func() context.Context {
+				ctx, cancel := context.WithCancel(context.Background())
+				cancel()
+
+				return ctx
+			},
+			Fn: failingFn,
+			Assert: func(t *testing.T, err error) {
+				errorIs(t, err, context.Canceled)
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			t.Parallel()
+
+			retry := retrier.NewLinear(3, 10*time.Millisecond)
+			err := retry.DoContext(test.GetContext(), test.Fn)
+
+			test.Assert(t, err)
 		})
 	}
 }

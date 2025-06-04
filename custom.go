@@ -1,6 +1,7 @@
 package retrier
 
 import (
+	"context"
 	"math/rand/v2"
 	"time"
 )
@@ -62,5 +63,9 @@ type retrier struct {
 }
 
 func (r *retrier) Do(fn Fn) error {
-	return doWithRetries(fn, r.calcDelayFn, r.allowNextAttemptFn)
+	return doWithRetries(context.Background(), fn, r.calcDelayFn, r.allowNextAttemptFn)
+}
+
+func (r *retrier) DoContext(ctx context.Context, fn Fn) error {
+	return doWithRetries(ctx, fn, r.calcDelayFn, r.allowNextAttemptFn)
 }

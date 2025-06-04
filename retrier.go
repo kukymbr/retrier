@@ -2,7 +2,10 @@
 // with retrying policy.
 package retrier
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
 // Fn is a function to call.
 type Fn func() error
@@ -11,6 +14,9 @@ type Fn func() error
 type Retrier interface {
 	// Do execute a Fn and retry it in case of error.
 	Do(fn Fn) error
+
+	// DoContext execute a Fn and retry it in case of error, respecting the context.
+	DoContext(ctx context.Context, fn Fn) error
 }
 
 // New returns custom Retrier.
