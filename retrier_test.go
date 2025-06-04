@@ -12,6 +12,7 @@ func TestRetrier_Do(t *testing.T) {
 	tests := []struct {
 		Name       string
 		GetRetrier func() retrier.Retrier
+		GetContext func() context.Context
 		Fn         func() error
 		Assert     func(t *testing.T, took time.Duration, err error)
 	}{
@@ -96,52 +97,11 @@ func TestRetrier_Do(t *testing.T) {
 				errorIs(t, err, errTest)
 			},
 		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.Name, func(t *testing.T) {
-			t.Parallel()
-
-			retry := test.GetRetrier()
-
-			start := time.Now()
-			err := retry.Do(test.Fn)
-			took := time.Since(start)
-
-			test.Assert(t, took, err)
-		})
-	}
-}
-
-func TestRetrier_DoContext(t *testing.T) {
-	tests := []struct {
-		Name       string
-		GetContext func() context.Context
-		Fn         func() error
-		Assert     func(t *testing.T, err error)
-	}{
 		{
-			Name: "with context and error",
-			GetContext: func() context.Context {
-				return context.Background()
+			Name: "when context is cancelled",
+			GetRetrier: func() retrier.Retrier {
+				return retrier.NewLinear(3, 10*time.Millisecond)
 			},
-			Fn: failingFn,
-			Assert: func(t *testing.T, err error) {
-				errorIs(t, err, errTest)
-			},
-		},
-		{
-			Name: "with context without error",
-			GetContext: func() context.Context {
-				return context.Background()
-			},
-			Fn: successFn,
-			Assert: func(t *testing.T, err error) {
-				noError(t, err)
-			},
-		},
-		{
-			Name: "with cancelled context with error",
 			GetContext: func() context.Context {
 				ctx, cancel := context.WithCancel(context.Background())
 				cancel()
@@ -149,7 +109,8 @@ func TestRetrier_DoContext(t *testing.T) {
 				return ctx
 			},
 			Fn: failingFn,
-			Assert: func(t *testing.T, err error) {
+			Assert: func(t *testing.T, took time.Duration, err error) {
+				less(t, took, time.Millisecond)
 				errorIs(t, err, context.Canceled)
 			},
 		},
@@ -159,10 +120,18 @@ func TestRetrier_DoContext(t *testing.T) {
 		t.Run(test.Name, func(t *testing.T) {
 			t.Parallel()
 
-			retry := retrier.NewLinear(3, 10*time.Millisecond)
-			err := retry.DoContext(test.GetContext(), test.Fn)
+			retry := test.GetRetrier()
+			ctx := context.Background()
 
-			test.Assert(t, err)
+			if test.GetContext != nil {
+				ctx = test.GetContext()
+			}
+
+			start := time.Now()
+			err := retry.Do(ctx, test.Fn)
+			took := time.Since(start)
+
+			test.Assert(t, took, err)
 		})
 	}
 }

@@ -13,10 +13,7 @@ type Fn func() error
 // Retrier is a tool to execute Fn with retries.
 type Retrier interface {
 	// Do execute a Fn and retry it in case of error.
-	Do(fn Fn) error
-
-	// DoContext execute a Fn and retry it in case of error, respecting the context.
-	DoContext(ctx context.Context, fn Fn) error
+	Do(ctx context.Context, fn Fn) error
 }
 
 // New returns custom Retrier.

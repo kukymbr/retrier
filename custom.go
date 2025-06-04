@@ -62,10 +62,6 @@ type retrier struct {
 	allowNextAttemptFn AllowNextAttemptFunc
 }
 
-func (r *retrier) Do(fn Fn) error {
-	return doWithRetries(context.Background(), fn, r.calcDelayFn, r.allowNextAttemptFn)
-}
-
-func (r *retrier) DoContext(ctx context.Context, fn Fn) error {
+func (r *retrier) Do(ctx context.Context, fn Fn) error {
 	return doWithRetries(ctx, fn, r.calcDelayFn, r.allowNextAttemptFn)
 }
