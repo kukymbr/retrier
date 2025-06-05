@@ -29,7 +29,7 @@ err := rt.Do(context.Background(), someNiceButUnstableFunc())
 
 ### Progressive retrier
 
-Linear retrier attempts to execute a function with a progressively increasing delay and a random jitter.
+Progressive retrier attempts to execute a function with a progressively increasing delay and a random jitter.
 
 ```go
 rt := retrier.NewProgressive(5, 10*time.Second, 1.5)
@@ -51,9 +51,11 @@ To use a Retrier with some custom logic, use a `retrier.New` function:
 
 ```go
 rt := retrier.New(
+	// Function, calculating the delay before next attempt.
     func(attemptN int, lastDelay time.Duration) time.Duration {
 	    return 10*time.Second 	
     },
+	// Function, deciding give it another try or not.
     func(attemptN int, lastDelay time.Duration) bool {
 	    return lastDelay > time.Minute
     }
