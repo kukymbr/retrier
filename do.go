@@ -44,7 +44,12 @@ func doWithRetries(ctx context.Context, fn Fn, delayFn CalcDelayFunc, allowNextF
 			continue
 		}
 
-		<-time.After(delay)
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(delay):
+			continue
+		}
 	}
 
 	return fmt.Errorf(
