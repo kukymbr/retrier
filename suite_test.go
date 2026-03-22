@@ -1,6 +1,7 @@
 package retrier_test
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -8,11 +9,11 @@ import (
 
 var errTest = errors.New("test error")
 
-func failingFn() error {
+func failingFn(_ context.Context) error {
 	return errTest
 }
 
-func successFn() error {
+func successFn(_ context.Context) error {
 	return nil
 }
 

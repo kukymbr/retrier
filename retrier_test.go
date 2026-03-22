@@ -8,17 +8,24 @@ import (
 	"github.com/kukymbr/retrier"
 )
 
+func sharedOpts(t *testing.T) []retrier.Option {
+	return []retrier.Option{
+		retrier.WithName(t.Name()),
+		retrier.WithLogFunc(t.Logf),
+	}
+}
+
 func TestRetrier_Do(t *testing.T) {
 	tests := []struct {
 		Name       string
-		GetRetrier func() retrier.Retrier
+		GetRetrier func(t *testing.T) *retrier.Retrier
 		GetContext func() context.Context
-		Fn         func() error
+		Fn         func(context.Context) error
 		Assert     func(t *testing.T, took time.Duration, err error)
 	}{
 		{
 			Name: "noop retrier",
-			GetRetrier: func() retrier.Retrier {
+			GetRetrier: func(t *testing.T) *retrier.Retrier {
 				return retrier.NewNoop()
 			},
 			Fn: failingFn,
@@ -29,8 +36,8 @@ func TestRetrier_Do(t *testing.T) {
 		},
 		{
 			Name: "linear retrier when success",
-			GetRetrier: func() retrier.Retrier {
-				return retrier.NewLinear(3, time.Second)
+			GetRetrier: func(t *testing.T) *retrier.Retrier {
+				return retrier.NewLinear(3, time.Second, sharedOpts(t)...)
 			},
 			Fn: successFn,
 			Assert: func(t *testing.T, took time.Duration, err error) {
@@ -40,8 +47,8 @@ func TestRetrier_Do(t *testing.T) {
 		},
 		{
 			Name: "linear retrier when error",
-			GetRetrier: func() retrier.Retrier {
-				return retrier.NewLinear(3, 10*time.Millisecond)
+			GetRetrier: func(t *testing.T) *retrier.Retrier {
+				return retrier.NewLinear(3, 10*time.Millisecond, sharedOpts(t)...)
 			},
 			Fn: failingFn,
 			Assert: func(t *testing.T, took time.Duration, err error) {
@@ -51,8 +58,8 @@ func TestRetrier_Do(t *testing.T) {
 		},
 		{
 			Name: "progressive retrier when success",
-			GetRetrier: func() retrier.Retrier {
-				return retrier.NewProgressive(3, time.Second, 2)
+			GetRetrier: func(t *testing.T) *retrier.Retrier {
+				return retrier.NewProgressive(3, time.Second, 2, sharedOpts(t)...)
 			},
 			Fn: successFn,
 			Assert: func(t *testing.T, took time.Duration, err error) {
@@ -62,8 +69,8 @@ func TestRetrier_Do(t *testing.T) {
 		},
 		{
 			Name: "progressive retrier when error",
-			GetRetrier: func() retrier.Retrier {
-				return retrier.NewProgressive(3, 5*time.Millisecond, 2)
+			GetRetrier: func(t *testing.T) *retrier.Retrier {
+				return retrier.NewProgressive(3, 5*time.Millisecond, 2, sharedOpts(t)...)
 			},
 			Fn: failingFn,
 			Assert: func(t *testing.T, took time.Duration, err error) {
@@ -73,10 +80,11 @@ func TestRetrier_Do(t *testing.T) {
 		},
 		{
 			Name: "progressive retrier when error with max delay",
-			GetRetrier: func() retrier.Retrier {
+			GetRetrier: func(t *testing.T) *retrier.Retrier {
 				return retrier.New(
-					retrier.WithMaxDelay(retrier.ProgressiveDelay(5*time.Millisecond, 2), 10*time.Millisecond),
-					retrier.LimitAttemptsCount(5),
+					retrier.WithProgressiveDelay(5*time.Millisecond, 2),
+					retrier.WithMaxDelay(10*time.Millisecond),
+					retrier.WithMaxAttemptsCount(5),
 				)
 			},
 			Fn: failingFn,
@@ -88,8 +96,8 @@ func TestRetrier_Do(t *testing.T) {
 		},
 		{
 			Name: "when zero arguments",
-			GetRetrier: func() retrier.Retrier {
-				return retrier.NewLinear(0, 0)
+			GetRetrier: func(t *testing.T) *retrier.Retrier {
+				return retrier.NewLinear(0, 0, sharedOpts(t)...)
 			},
 			Fn: failingFn,
 			Assert: func(t *testing.T, took time.Duration, err error) {
@@ -99,8 +107,8 @@ func TestRetrier_Do(t *testing.T) {
 		},
 		{
 			Name: "when context is cancelled",
-			GetRetrier: func() retrier.Retrier {
-				return retrier.NewLinear(3, 10*time.Millisecond)
+			GetRetrier: func(t *testing.T) *retrier.Retrier {
+				return retrier.NewLinear(3, 10*time.Millisecond, sharedOpts(t)...)
 			},
 			GetContext: func() context.Context {
 				ctx, cancel := context.WithCancel(context.Background())
@@ -120,7 +128,7 @@ func TestRetrier_Do(t *testing.T) {
 		t.Run(test.Name, func(t *testing.T) {
 			t.Parallel()
 
-			retry := test.GetRetrier()
+			retry := test.GetRetrier(t)
 			ctx := context.Background()
 
 			if test.GetContext != nil {

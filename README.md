@@ -24,7 +24,7 @@ Linear retrier attempts to execute function with a fixed delay.
 
 ```go
 rt := retrier.NewLinear(5, 10*time.Second)
-err := rt.Do(context.Background(), someNiceButUnstableFunc())
+err := rt.Do(context.Background(), someNiceButUnstableFunc)
 ```
 
 ### Progressive retrier
@@ -33,59 +33,47 @@ Progressive retrier attempts to execute a function with a progressively increasi
 
 ```go
 rt := retrier.NewProgressive(5, 10*time.Second, 1.5)
-err := rt.Do(context.Background(), someNiceButUnstableFunc())
+err := rt.Do(context.Background(), someNiceButUnstableFunc)
 ```
 
 ### No-op retrier
 
-Noop retrier allow to disable retrying policy using the same `Retrier` interface.
+Noop retrier allow to disable retrying policy.
 
 ```go
 rt := retrier.NewNoop()
-err := rt.Do(context.Background(), someFuncToRunWithoutRetries())
+err := rt.Do(context.Background(), someFuncToRunWithoutRetries)
 ```
 
-### Custom retrier
+### Options
 
-To use a Retrier with some custom logic, use a `retrier.New` function:
+To make a custom Retrier, use a `retrier.New` function:
 
 ```go
 rt := retrier.New(
-	// Function, calculating the delay before next attempt.
-    func(attemptN int, lastDelay time.Duration) time.Duration {
+    // Function, calculating the delay before next attempt.
+    WithCalcDelayFn(func(attemptN int, lastDelay time.Duration) time.Duration {
 	    return 10*time.Second 	
-    },
+    }),
 	// Function, deciding give it another try or not.
-    func(attemptN int, lastDelay time.Duration) bool {
+    WithAllowNextAttemptFn(func(attemptN int, lastDelay time.Duration) bool {
 	    return lastDelay > time.Minute
-    }
+    }),
 )
-err := rt.Do(context.Background(), someNiceButUnstableFunc())
+err := rt.Do(context.Background(), someNiceButUnstableFunc)
 ```
 
-#### Predefined sugars
-
-There are some predefined sugar functions to create custom retriers. 
-For example:
+Also, options are available in the `NewLinear` and `NewProgressive` functions too:
 
 ```go
-rt := retrier.New(
-    retrier.WithJitter(retrier.WithMaxDelay(retrier.ProgressiveDelay(10*time.Second, 1.5), 10*time.Minute)),
-    retrier.LimitAttemptsCount(100),
+rt := retrier.NewLinear(
+	5, 10*time.Second,
+	WithName("test_retrier"),
+	WithLogFn(t.Logf),
 )
-err := rt.Do(context.Background(), someNiceButUnstableFunc())
 ```
 
-##### Predefined `CalcDelayFunc` functions
-
-* `retrier.LimitAttemptsCount` adds attempt count limit.
-
-##### Predefined `AllowNextAttemptFunc` functions
-
-* `retrier.FixedDelay` sets fixed delay before every attempt;
-* `retrier.ProgressiveDelay` sets a progressively increasing delay;
-* `retrier.WithDelayJitter` adds random jitter to the delay;
-* `retrier.WithMaxDelay` adds max delay limit.
+See the [options.go](options.go) file for an available options.
 
 ## License
 
